@@ -1,0 +1,127 @@
+{
+	"info": {
+		"_postman_id": "4b6c8a2e-4e5a-4b6c-8a2e-4e5a4b6c8a2e",
+		"name": "LifeLink Backend API",
+		"description": "API collection for LifeLink backend including user management and QR code generation.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"johndoe\",\n    \"email\": \"john@example.com\",\n    \"fullName\": \"John Doe\",\n    \"phone\": \"+1234567890\",\n    \"isMinor\": false,\n    \"dynamicInfo\": {\n        \"bloodType\": \"O+\",\n        \"allergies\": \"Peanuts\",\n        \"emergencyContact\": \"Jane Doe (+0987654321)\"\n    }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/users",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/users/{{userId}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Retrieves the full user profile including JSONB meta info."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Meta Info",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dynamicInfo\": {\n        \"bloodType\": \"O+\",\n        \"allergies\": \"Peanuts, Pollen\",\n        \"medications\": \"None\"\n    }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/users/{{userId}}/meta-info",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"{{userId}}",
+								"meta-info"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Download QR Code",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/users/{{userId}}/qr-code",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"{{userId}}",
+								"qr-code"
+							]
+						},
+						"description": "Downloads the QR code for the user. Points to the JSON profile URL."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "userId",
+			"value": "ENTER_USER_ID_HERE",
+			"type": "string"
+		}
+	]
+}

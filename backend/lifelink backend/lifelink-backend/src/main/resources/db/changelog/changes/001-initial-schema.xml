@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1" author="lifelink">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="users" />
+            </not>
+        </preConditions>
+        <createTable tableName="users">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="username" type="varchar(255)">
+                <constraints unique="true" nullable="true"/>
+            </column>
+            <column name="email" type="varchar(255)">
+                <constraints unique="true" nullable="true"/>
+            </column>
+            <column name="full_name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="phone" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_minor" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp"/>
+            <column name="updated_at" type="timestamp"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="2" author="lifelink">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="users" columnName="unique_code"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="users">
+            <column name="unique_code" type="varchar(8)">
+                <constraints unique="true" nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="3" author="lifelink">
+        <!-- Relax nullability on username and email if they existed before -->
+        <sql>
+            ALTER TABLE users ALTER COLUMN username DROP NOT NULL;
+            ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+        </sql>
+    </changeSet>
+
+    <changeSet id="4" author="lifelink">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="user_meta_info" />
+            </not>
+        </preConditions>
+        <createTable tableName="user_meta_info">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dynamic_info" type="jsonb"/>
+            <column name="public_fields" type="jsonb"/>
+            <column name="updated_at" type="timestamp"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="user_meta_info"
+                                 baseColumnNames="user_id"
+                                 constraintName="fk_user_meta_user"
+                                 referencedTableName="users"
+                                 referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="5" author="lifelink">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="user_meta_info" columnName="public_fields"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="user_meta_info">
+            <column name="public_fields" type="jsonb"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="6" author="lifelink">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="auth_otp" />
+            </not>
+        </preConditions>
+        <createTable tableName="auth_otp">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="phone" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="otp_code" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="7" author="lifelink">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="access_logs" />
+            </not>
+        </preConditions>
+        <createTable tableName="access_logs">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="unique_code" type="varchar(8)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ip_address" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_agent" type="varchar(500)"/>
+            <column name="accessed_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

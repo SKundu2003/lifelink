@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --color-lifelink-red: #e11d48;
+  --color-lifelink-blue: #2563eb;
+  --color-lifelink-slate: #0c1324;
+  --color-lifelink-slate-light: #191f31;
+  --color-lifelink-slate-lighter: #2e3447;
+  
+  --font-inter: "Inter", sans-serif;
+}
+
+:root {
+  --background: #0c1324;
+  --foreground: #dce1fb;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-inter);
+}
+
+@utility crisis-card {
+  @apply bg-lifelink-slate-light p-6 rounded-xl border border-white/5 backdrop-blur-md;
+}
+
+@utility crisis-input {
+  @apply w-full bg-lifelink-slate-lighter border-none rounded-lg p-3 text-white placeholder:text-white/20 focus:ring-2 focus:ring-lifelink-red outline-none transition-all;
+}
+
+@utility btn-primary {
+  @apply bg-lifelink-red hover:bg-lifelink-red/90 text-white font-bold py-3 px-6 rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2;
+}
+
+@utility btn-secondary {
+  @apply bg-lifelink-slate-lighter hover:bg-lifelink-slate-lighter/80 text-white font-semibold py-3 px-6 rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2;
+}
+
+/* Glassmorphism effects */
+.glass {
+  background: rgba(25, 31, 49, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.on-surface-variant {
+  color: #e5bdbe;
+}
