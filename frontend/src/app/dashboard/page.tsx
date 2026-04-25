@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LogOut, Plus, Save, RefreshCw, X, 
-  Download, AlertTriangle, CheckCircle, Info
+import {
+  LogOut, Plus, Save, RefreshCw, X,
+  Download, AlertTriangle, CheckCircle, Info, ScanLine
 } from 'lucide-react';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Image from 'next/image';
 import api from '@/lib/api';
@@ -72,24 +73,34 @@ export default function DashboardPage() {
   };
 
   const handleSave = async () => {
+    // Validate: no empty keys
+    const emptyKey = dynamicFields.some((f) => !f.key.trim());
+    if (emptyKey) { showToast('Each field must have a label name', 'error'); return; }
+
+    // Validate: no duplicate keys
+    const keys = dynamicFields.map((f) => f.key.trim().toLowerCase());
+    const hasDupe = keys.length !== new Set(keys).size;
+    if (hasDupe) { showToast('Duplicate field labels are not allowed', 'error'); return; }
+
     setSaving(true);
     try {
       const dynamicInfo = dynamicFields.reduce((acc, field) => {
-        if (field.key) acc[field.key] = field.value;
+        if (field.key.trim()) acc[field.key.trim()] = field.value;
         return acc;
       }, {} as Record<string, string>);
 
       const publicFields = dynamicFields
-        .filter((f) => f.isPublic && f.key)
-        .map((f) => f.key);
+        .filter((f) => f.isPublic && f.key.trim())
+        .map((f) => f.key.trim());
 
       await api.patch(`/api/users/${userId}/meta-info`, {
         dynamicInfo,
         publicFields,
       });
       showToast('Profile updated', 'success');
-    } catch (err) {
-      showToast('Failed to sync data', 'error');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Failed to sync data';
+      showToast(msg, 'error');
     } finally {
       setSaving(false);
     }
@@ -116,19 +127,29 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 pb-32">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-36">
       {/* Header */}
-      <header className="flex items-center justify-between mb-10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-lifelink-red rounded flex items-center justify-center font-black italic">LL</div>
-          <span className="font-bold tracking-widest text-sm text-white/50">LIFELINK DASHBOARD</span>
+      <header className="flex items-center justify-between mb-8 sm:mb-10 gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 shrink-0 bg-lifelink-red rounded flex items-center justify-center font-black italic text-sm">LL</div>
+          <span className="font-bold tracking-widest text-xs sm:text-sm text-white/50 truncate">LIFELINK</span>
         </div>
-        <button 
-          onClick={logout}
-          className="p-3 text-white/40 hover:text-white transition-colors"
-        >
-          <LogOut size={20} />
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/find"
+            className="flex items-center gap-2 text-xs font-bold text-lifelink-red bg-lifelink-red/10 px-3 py-2 rounded-full hover:bg-lifelink-red/20 transition-all uppercase"
+          >
+            <ScanLine size={14} />
+            <span className="hidden xs:inline">Find / Scan</span>
+            <span className="xs:hidden">Scan</span>
+          </Link>
+          <button
+            onClick={logout}
+            className="p-2.5 text-white/40 hover:text-white transition-colors"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
       </header>
 
       {/* Profile Card */}

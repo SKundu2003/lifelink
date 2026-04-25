@@ -32,10 +32,10 @@ export default function LandingPage() {
           <UserPlus className="w-5 h-5" />
           Create My LifeLink
         </Link>
-        <button className="btn-secondary w-full text-lg">
+        <Link href="/find" className="btn-secondary w-full text-lg">
           <Search className="w-5 h-5" />
-          Find/Scan a User
-        </button>
+          Find / Scan a User
+        </Link>
       </div>
 
       <div className="mt-auto pt-12 flex items-center gap-2 text-white/30 text-sm">

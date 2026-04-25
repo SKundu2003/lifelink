@@ -2,6 +2,8 @@ package com.lifelink.lifelink.backend.service;
 
 import com.lifelink.lifelink.backend.entity.AuthOtp;
 import com.lifelink.lifelink.backend.entity.User;
+import com.lifelink.lifelink.backend.exception.ConflictException;
+import com.lifelink.lifelink.backend.exception.ResourceNotFoundException;
 import com.lifelink.lifelink.backend.repository.AuthOtpRepository;
 import com.lifelink.lifelink.backend.repository.UserRepository;
 import com.lifelink.lifelink.backend.request.OtpRequest;
@@ -11,11 +13,11 @@ import com.lifelink.lifelink.backend.security.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -27,35 +29,50 @@ public class AuthService {
 
     @Transactional
     public AuthResponse requestOtp(OtpRequest request) {
+        // Check for duplicate email (if provided and new user)
+        boolean phoneExists = userRepository.findByPhone(request.getPhone()).isPresent();
+        if (!phoneExists) {
+            if (StringUtils.hasText(request.getEmail())
+                    && userRepository.findByEmail(request.getEmail()).isPresent()) {
+                throw new ConflictException("An account with this email already exists");
+            }
+            if (StringUtils.hasText(request.getUsername())
+                    && userRepository.findByUsername(request.getUsername()).isPresent()) {
+                throw new ConflictException("This username is already taken");
+            }
+        }
+
         // Clear any existing OTP for this phone
         authOtpRepository.deleteByPhone(request.getPhone());
 
-        // Generate 6-digit OTP
-        String otpCode = String.format("%06d", new Random().nextInt(999999));
-        
+        // Hardcoded OTP for dev/testing
+        String otpCode = "000000";
+
         AuthOtp authOtp = AuthOtp.builder()
                 .phone(request.getPhone())
                 .otpCode(otpCode)
                 .expiresAt(LocalDateTime.now().plusMinutes(5))
                 .build();
-        
+
         authOtpRepository.save(authOtp);
-        
-        // Ensure user exists or prepare to create on verify (We just log the name for now, actual creation happens on verify if we cache the name, or we just trust the name on request)
-        // Wait, the requirement says "Users provide a phone and name. The system should generate a 6-digit OTP... and verify it to issue a JWT".
-        // It's better to store the name if we are creating a new user, but since OTP verify doesn't ask for name, we can create the User *now* if it doesn't exist, OR add fullName to AuthOtp.
-        // Let's create the user right now if they don't exist, but mark them as incomplete or just create them.
-        Optional<User> existingUser = userRepository.findByPhone(request.getPhone());
-        if (existingUser.isEmpty()) {
+
+        if (!phoneExists) {
+            // New User flow: fullName is mandatory
+            if (!StringUtils.hasText(request.getFullName())) {
+                throw new IllegalArgumentException("User not found. Please provide your full name to register.");
+            }
+
             User newUser = User.builder()
                     .phone(request.getPhone())
                     .fullName(request.getFullName())
+                    .email(StringUtils.hasText(request.getEmail()) ? request.getEmail() : null)
+                    .username(StringUtils.hasText(request.getUsername()) ? request.getUsername() : null)
+                    .isMinor(Boolean.TRUE.equals(request.getIsMinor()))
                     .uniqueCode(generateUniqueCode())
                     .build();
             userRepository.save(newUser);
         }
 
-        // In a real application, send the OTP via SMS here!
         return AuthResponse.builder()
                 .message("OTP generated successfully. In dev mode: " + otpCode)
                 .build();
@@ -63,27 +80,42 @@ public class AuthService {
 
     @Transactional
     public AuthResponse verifyOtp(OtpVerifyRequest request) {
-        Optional<AuthOtp> optionalOtp = authOtpRepository.findByPhoneAndOtpCode(request.getPhone(), request.getOtpCode());
-        
-        if (optionalOtp.isEmpty() || optionalOtp.get().getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Invalid or expired OTP");
+        if (!StringUtils.hasText(request.getPhone())) {
+            throw new IllegalArgumentException("Phone number is required");
         }
-        
+        if (!StringUtils.hasText(request.getOtpCode()) || request.getOtpCode().length() != 6) {
+            throw new IllegalArgumentException("OTP must be exactly 6 digits");
+        }
+        if (!request.getOtpCode().matches("\\d{6}")) {
+            throw new IllegalArgumentException("OTP must contain only digits");
+        }
+
+        Optional<AuthOtp> optionalOtp = authOtpRepository.findByPhoneAndOtpCode(
+                request.getPhone(), request.getOtpCode());
+
+        if (optionalOtp.isEmpty()) {
+            throw new IllegalArgumentException("Invalid OTP. Please check the code and try again.");
+        }
+        if (optionalOtp.get().getExpiresAt().isBefore(LocalDateTime.now())) {
+            authOtpRepository.delete(optionalOtp.get());
+            throw new IllegalArgumentException("OTP has expired. Please request a new one.");
+        }
+
         User user = userRepository.findByPhone(request.getPhone())
-                .orElseThrow(() -> new RuntimeException("User not found after OTP setup"));
-        
-        // OTP is valid, clear it
+                .orElseThrow(() -> new ResourceNotFoundException("User not found. Please register first."));
+
         authOtpRepository.delete(optionalOtp.get());
-        
+
         String jwtToken = jwtUtil.generateToken(user.getId().toString());
         return AuthResponse.builder()
                 .token(jwtToken)
+                .userId(user.getId().toString())
                 .message("Successfully authenticated")
                 .build();
     }
 
     private String generateUniqueCode() {
-        String code = "";
+        String code;
         do {
             code = "LL-" + generateRandomString(5);
         } while (userRepository.findByUniqueCode(code).isPresent());

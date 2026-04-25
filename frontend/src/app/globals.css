@@ -6,7 +6,7 @@
   --color-lifelink-slate: #0c1324;
   --color-lifelink-slate-light: #191f31;
   --color-lifelink-slate-lighter: #2e3447;
-  
+
   --font-inter: "Inter", sans-serif;
 }
 
@@ -15,26 +15,33 @@
   --foreground: #dce1fb;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-inter);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
 }
 
 @utility crisis-card {
-  @apply bg-lifelink-slate-light p-6 rounded-xl border border-white/5 backdrop-blur-md;
+  @apply bg-lifelink-slate-light p-5 sm:p-6 rounded-2xl border border-white/5 backdrop-blur-md;
 }
 
 @utility crisis-input {
-  @apply w-full bg-lifelink-slate-lighter border-none rounded-lg p-3 text-white placeholder:text-white/20 focus:ring-2 focus:ring-lifelink-red outline-none transition-all;
+  @apply w-full bg-lifelink-slate-lighter border-none rounded-2xl px-4 py-3.5 min-h-[52px] text-base text-white placeholder:text-white/20 focus:ring-2 focus:ring-lifelink-red outline-none transition-all;
 }
 
 @utility btn-primary {
-  @apply bg-lifelink-red hover:bg-lifelink-red/90 text-white font-bold py-3 px-6 rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2;
+  @apply bg-lifelink-red hover:bg-lifelink-red/90 text-white font-bold py-3.5 px-6 min-h-[52px] rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 text-base;
 }
 
 @utility btn-secondary {
-  @apply bg-lifelink-slate-lighter hover:bg-lifelink-slate-lighter/80 text-white font-semibold py-3 px-6 rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2;
+  @apply bg-lifelink-slate-lighter hover:bg-lifelink-slate-lighter/80 text-white font-semibold py-3.5 px-6 min-h-[52px] rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 text-base;
 }
 
 /* Glassmorphism effects */
@@ -46,4 +53,9 @@ body {
 
 .on-surface-variant {
   color: #e5bdbe;
+}
+
+/* Safe-area padding for notched devices */
+.safe-bottom {
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
 }

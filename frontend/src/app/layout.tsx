@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 export const metadata: Metadata = {
   title: "LifeLink | Crisis-Ready Emergency Identity",
   description: "Secure, mobile-first emergency identity platform for instant discovery.",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover",
+  themeColor: "#0c1324",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "LifeLink" },
 };
 
 export default function RootLayout({

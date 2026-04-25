@@ -5,8 +5,10 @@ import com.lifelink.lifelink.backend.entity.User;
 import com.lifelink.lifelink.backend.entity.UserMetaInfo;
 import com.lifelink.lifelink.backend.repository.AccessLogRepository;
 import com.lifelink.lifelink.backend.repository.UserMetaInfoRepository;
+import com.lifelink.lifelink.backend.exception.ResourceNotFoundException;
 import com.lifelink.lifelink.backend.repository.UserRepository;
 import com.lifelink.lifelink.backend.response.UserResponse;
+import org.springframework.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,17 +29,24 @@ public class DiscoveryService {
 
     @Transactional
     public UserResponse getPublicProfile(String uniqueCode, String ipAddress, String userAgent) {
+        if (!StringUtils.hasText(uniqueCode)) {
+            throw new IllegalArgumentException("Identity code is required");
+        }
+        if (!uniqueCode.matches("^[A-Z0-9]{2}-[A-Z0-9]{3,10}$")) {
+            throw new IllegalArgumentException("Invalid identity code format");
+        }
+
         // 1. Log the access attempt
         AccessLog logEntry = AccessLog.builder()
                 .uniqueCode(uniqueCode)
-                .ipAddress(ipAddress)
+                .ipAddress(ipAddress != null ? ipAddress : "unknown")
                 .userAgent(userAgent)
                 .build();
         accessLogRepository.save(logEntry);
 
         // 2. Fetch User and MetaInfo
         User user = userRepository.findByUniqueCode(uniqueCode)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("No LifeLink profile found for code: " + uniqueCode));
 
         UserMetaInfo metaInfo = userMetaInfoRepository.findByUserId(user.getId())
                 .orElse(null);
